@@ -2,7 +2,7 @@
 if node[:magento][:use_demo]
   directory "/tmp/magento/#{node[:magento][:demo_version]}" do
      group node[:magento][:unix_user]
-     owner node[:magento][:unix_user]    
+     owner node[:magento][:unix_user]
      action :delete
      recursive true
   end
@@ -45,7 +45,7 @@ bash "magento-install-site" do
   --db_name "#{node[:magento][:db][:database]}" \
   --db_user "#{node[:magento][:db][:username]}" \
   --db_pass "#{node[:magento][:db][:password]}" \
-  --url "#{node[:magento][:base_url]}/#{node[:magento][:dir_name]}/" \
+  --url "#{node[:ec2] && node[:ec2][:public_hostname] || node[:magento][:base_url]}/#{node[:magento][:dir_name]}/" \
   --skip_url_validation \
   --use_rewrites "yes" \
   --use_secure "no" \

@@ -19,34 +19,34 @@
 
 
 
-  group node[:magento][:unix_user] do
-  end
+group node[:magento][:unix_user] do
+end
   
-  user node[:magento][:unix_user] do
-    comment "OpenERP Super User"
-    gid node[:magento][:unix_user]
-    home "/home/#{node[:magento][:unix_user]}"
-    supports :manage_home=>true
-    shell "/bin/bash"
-  end
-  
+user node[:magento][:unix_user] do
+  comment "Magento User"
+  gid node[:magento][:unix_user]
+  home "/home/#{node[:magento][:unix_user]}"
+  supports :manage_home=>true
+  shell "/bin/bash"
+end
 
-  include_recipe "magento::lamp"
-  include_recipe "magento::phpmyadmin"
-  
-  apt_packages = %w[zip bzip2 php5-curl php5-cli php5-gd]
-  apt_packages.each do |pack|
-    package pack do
-      action :install
-      options "--force-yes"
-    end
-  end
-  
-  execute "chown #{node[:magento][:unix_user]} /var/www" do
-  end
+include_recipe "magento::lamp"
+include_recipe "magento::phpmyadmin"
+include_recipe "bzr::default"  
 
+apt_packages = %w[zip bzip2 php5-curl php5-cli php5-gd]
+apt_packages.each do |pack|
+  package pack do
+    action :install
+    options "--force-yes"
+  end
+end
+  
+execute "chown #{node[:magento][:unix_user]} /var/www" do
+end
 
-  unless `grep '#{node[:magento][:dir]}' /etc/apache2/apache2.conf`.size >0
+#configure apache
+unless `grep '#{node[:magento][:dir]}' /etc/apache2/apache2.conf`.size >0
 
   execute "ln -s ../mods-available/rewrite.load" do
     cwd "/etc/apache2/mods-enabled"
@@ -71,12 +71,14 @@
   end
 end
 
-  directory "/tmp/magento" do
-    group node[:magento][:unix_user]
-    owner node[:magento][:unix_user]
-    mode "0755"
-    action :create
-  end
+
+
+directory "/tmp/magento" do
+  group node[:magento][:unix_user]
+  owner node[:magento][:unix_user]
+  mode "0755"
+  action :create
+end
   
 unless File.exists?("#{node[:magento][:dir]}/installed_code.flag")
   
@@ -109,15 +111,18 @@ unless File.exists?("#{node[:magento][:dir]}/installed_code.flag")
      cwd "/tmp/magento"
      group node[:magento][:unix_user]
      user node[:magento][:unix_user]  
-  end  
-  
-  ['app/etc', 'var', 'media'].each do |file|
-    execute "change right on #{node[:magento][:dir]}/#{file}" do
-      command "chmod -R 777 #{node[:magento][:dir]}/#{file}"
-      user 'root'
-    end
+  end 
+
+  execute "chmod -R 777 #{node[:magento][:dir]}" do
+    action :run
   end
-  
+
+  execute "touch #{node[:magento][:dir]}/installed_code.flag" do
+  end
+end
+
+
+unless File.exists?("#{node[:magento][:dir]}/installed_code_connector.flag")
   directory "/tmp/magento/magento-module" do
      group node[:magento][:unix_user]
      owner node[:magento][:unix_user]    
@@ -125,21 +130,13 @@ unless File.exists?("#{node[:magento][:dir]}/installed_code.flag")
      recursive true
   end
 
-  execute "wget #{node[:magento][:download_folder]}/magento-module.tar.gz" do
-    creates "/tmp/magento/magento-module.tar.gz"
-    cwd "/tmp/magento"
-    action :run
-    group node[:magento][:unix_user]
-    user node[:magento][:unix_user]  
-  end
-  
-  execute "tar -zxvf magento-module.tar.gz" do
+  execute "su - #{node[:magento][:unix_user]} -c 'bzr branch --stacked #{node[:magento][:connector_branch]} /tmp/magento/magento-module; '" do
     creates "/tmp/magento/magento-module"
     cwd "/tmp/magento"
-    group node[:magento][:unix_user]
-    user node[:magento][:unix_user]
+    user "root"
+    action :run
   end
-
+  
   execute "mv magento-module/Openlabs_OpenERPConnector-1.1.0/app/etc/modules/Openlabs_OpenERPConnector.xml #{node[:magento][:dir]}/app/etc/modules/Openlabs_OpenERPConnector.xml" do
      creates "#{node[:magento][:dir]}/app/etc/module/Openlabs_OpenERPConnector.xml"
      cwd "/tmp/magento"
@@ -154,7 +151,7 @@ unless File.exists?("#{node[:magento][:dir]}/installed_code.flag")
      user node[:magento][:unix_user]  
   end
   
-  execute "touch #{node[:magento][:dir]}/installed_code.flag" do
+  execute "touch #{node[:magento][:dir]}/installed_code_connector.flag" do
   end
 end
 
@@ -169,12 +166,13 @@ unless File.exists?("#{node[:magento][:dir]}/installed.flag")
 end
 
 
+#This code should create some magento data/configuration but creating data in magento with sql or with api is not easy at all
 unless true #File.exists?("#{node[:magento][:dir]}/installed_sql_script.flag")
   if node[:magento][:init_sql_script]
     node[:magento][:init_sql_script].each do |script|
       
-      template "/tmp/magento/#{srcipt}.sql" do
-        path "/tmp/magento/#{srcipt}.sql"
+      template "/tmp/magento/#{script}.sql" do
+        path "/tmp/magento/#{script}.sql"
         source "#{srcipt}.sql.erb"
         group node[:magento][:unix_user]
         user node[:magento][:unix_user]  
