@@ -19,14 +19,9 @@ end
   # end
   
 
-#Create mysql magento db and user
+#Create mysql user
 
 execute "mysql-install-mage-privileges" do
   command "/usr/bin/mysql -u root -p#{node[:lamp][:mysql_root_password]} -Dmysql -e \"GRANT ALL ON #{node[:magento][:db][:database]}. * TO '#{node[:magento][:db][:username]}'@'localhost' IDENTIFIED BY '#{node[:magento][:db][:password]}'; FLUSH PRIVILEGES;\" " 
   action :run
-end
-
-execute "create #{node[:magento][:db][:database]} database" do
-  command "/usr/bin/mysqladmin -u root -p#{node[:lamp][:mysql_root_password]} create #{node[:magento][:db][:database]}"
-  not_if "/usr/bin/mysql -u root -p#{node[:lamp][:mysql_root_password]} -D #{node[:magento][:db][:database]} -e ''"
 end

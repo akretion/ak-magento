@@ -7,6 +7,14 @@ if node[:magento][:use_demo]
      recursive true
   end
 
+  if node[:magento][:demo_version] == 'defaults'
+    if node[:magento][:magento_version] >= "1.6.0.0"
+        node[:magento][:demo_version]="magento-sample-1.6.0.0"
+    else
+        node[:magento][:demo_version]="magento-sample-original"
+    end
+  end
+
   execute "wget #{node[:magento][:download_folder]}/#{node[:magento][:demo_version]}.tar.bz2" do
     creates "/tmp/magento/#{node[:magento][:demo_version]}.tar.bz2"
     cwd "/tmp/magento"
@@ -22,14 +30,32 @@ if node[:magento][:use_demo]
     user node[:magento][:unix_user]
   end
 
+  execute "mysql -u #{node[:magento][:db][:username]} -p#{node[:magento][:db][:password]} -e'DROP DATABASE IF EXISTS #{node[:magento][:db][:database]}'" do
+    cwd "/tmp/magento"
+  end  
+  
+  execute "create #{node[:magento][:db][:database]} database" do
+    command "mysql -u #{node[:magento][:db][:username]} -p#{node[:magento][:db][:password]} -e'CREATE DATABASE #{node[:magento][:db][:database]}'"
+  end
+
   execute "mysql -u #{node[:magento][:db][:username]} -p#{node[:magento][:db][:password]} #{node[:magento][:db][:database]} < #{node[:magento][:demo_version]}/#{node[:magento][:demo_version]}.sql" do
     cwd "/tmp/magento"
   end  
   
+  directory "#{node[:magento][:dir]}/media" do
+     group node[:magento][:unix_user]
+     owner node[:magento][:unix_user]
+     action :delete
+     recursive true
+  end
+
   execute "mv #{node[:magento][:demo_version]}/media/* #{node[:magento][:dir]}/media" do
      cwd "/tmp/magento"
      group node[:magento][:unix_user]
      user node[:magento][:unix_user]  
+  end
+
+  execute "chmod 777 #{node[:magento][:dir]}/media" do
   end
 end
 
@@ -45,7 +71,7 @@ bash "magento-install-site" do
   --db_name "#{node[:magento][:db][:database]}" \
   --db_user "#{node[:magento][:db][:username]}" \
   --db_pass "#{node[:magento][:db][:password]}" \
-  --url "#{node[:ec2] && node[:ec2][:public_hostname] || node[:magento][:base_url]}/#{node[:magento][:dir_name]}/" \
+  --url "#{node[:ec2] && node[:ec2][:public_hostname] || node[:magento][:base_url]}/#{node[:magento][:dir_name]}" \
   --skip_url_validation \
   --use_rewrites "yes" \
   --use_secure "no" \
