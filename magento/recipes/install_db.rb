@@ -8,8 +8,8 @@ if node[:magento][:use_demo]
   end
 
   if node[:magento][:demo_version] == 'defaults'
-    if node[:magento][:magento_version] >= "1.6.0.0"
-        node[:magento][:demo_version]="magento-sample-1.6.0.0"
+    if node[:magento][:magento_version] >= "1.6.1.0"
+        node[:magento][:demo_version]="magento-sample-1.6.1.0"
     else
         node[:magento][:demo_version]="magento-sample-original"
     end

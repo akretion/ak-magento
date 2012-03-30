@@ -1,4 +1,4 @@
-#Version available : "1.4.1.1" "1.5.0.1" "1.5.1.0" "1.6.0.0" "1.6.1.0"
+#Version available : "1.4.1.1" "1.5.0.1" "1.5.1.0" "1.6.1.0"
 
 #version 1.3.2.4 is also available but you should use the version 5.2 of php or install the magento under an ubuntu 8.04 -- 9.04
 default[:magento][:magento_version]       = "1.6.1.0"
@@ -21,7 +21,7 @@ default[:lamp][:mysql_root_password]      = "admin25"
 default[:magento][:install_db_from_scratch] = true
 default[:magento][:use_demo]              = true
 #Demo option : "defaults"
-#defaults option will automatically install the version of magento-sample-1.6.0.0 or magento-sample-original regarding the version chosen
+#defaults option will automatically install the version of magento-sample-1.6.1.0 or magento-sample-original regarding the version chosen
 default[:magento][:demo_version]          = 'defaults'
 
 default[:magento][:init_sql_script]       = false#['french_taxe']
