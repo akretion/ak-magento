@@ -2,7 +2,9 @@ include_recipe "apache2::default"
 
 apt_packages = %w[mysql-server php5 php5-mysql]
 apt_packages.each do |ap|
-  package "#{ap}"
+  package "#{ap}" do
+      options "--force-yes"
+  end
 end
 
 execute "assign-root-password" do

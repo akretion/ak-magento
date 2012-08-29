@@ -9,20 +9,30 @@ if node[:magento][:use_demo]
 
   if node[:magento][:demo_version] == 'defaults'
     if node[:magento][:magento_version] >= "1.6.1.0"
-        node[:magento][:demo_version]="magento-sample-1.6.1.0"
+        node[:magento][:demo_version]="magento-sample-data-1.6.1.0"
     else
         node[:magento][:demo_version]="magento-sample-original"
     end
   end
 
-  execute "wget #{node[:magento][:download_folder]}/#{node[:magento][:demo_version]}.tar.bz2" do
-    creates "/tmp/magento/#{node[:magento][:demo_version]}.tar.bz2"
-    cwd "/tmp/magento"
-    action :run
-    group node[:magento][:unix_user]
-    user node[:magento][:unix_user]  
+  if node[:magento][:download_folder][0..3] == "http"
+    execute "wget #{node[:magento][:download_folder]}/#{node[:magento][:demo_type]}/#{node[:magento][:demo_version]}.tar.bz2" do
+      creates "/tmp/magento/#{node[:magento][:demo_version]}.tar.bz2"
+      cwd "/tmp/magento"
+      action :run
+      group node[:magento][:unix_user]
+      user node[:magento][:unix_user]  
+    end
+  else
+    execute "cp #{node[:magento][:download_folder]}/#{node[:magento][:demo_type]}/#{node[:magento][:demo_version]}.tar.bz2 ." do
+      creates "/tmp/magento/#{node[:magento][:demo_version]}.tar.bz2"
+      cwd "/tmp/magento"
+      action :run
+      group node[:magento][:unix_user]
+      user node[:magento][:unix_user]  
+    end
   end
-  
+
   execute "tar -jxvf #{node[:magento][:demo_version]}.tar.bz2" do
     creates "/tmp/magento/#{node[:magento][:demo_version]}"
     cwd "/tmp/magento"
@@ -49,13 +59,13 @@ if node[:magento][:use_demo]
      recursive true
   end
 
-  execute "mv #{node[:magento][:demo_version]}/media/* #{node[:magento][:dir]}/media" do
+  execute "mv #{node[:magento][:demo_version]}/media #{node[:magento][:dir]}/media" do
      cwd "/tmp/magento"
      group node[:magento][:unix_user]
      user node[:magento][:unix_user]  
   end
 
-  execute "chmod 777 #{node[:magento][:dir]}/media" do
+  execute "chmod -R 777 #{node[:magento][:dir]}/media" do
   end
 end
 

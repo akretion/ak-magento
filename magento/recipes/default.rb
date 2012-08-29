@@ -17,6 +17,11 @@
 # limitations under the License.
 #
 
+execute "apt-get update" do
+  command "apt-get update"
+  action :run
+end
+
 
 
 group node[:magento][:unix_user] do
@@ -89,13 +94,23 @@ unless File.exists?("#{node[:magento][:dir]}/installed_code.flag")
      recursive true
   end
   
-  #http://www.magentocommerce.com/getmagento/1.5.0.1/magento-1.5.0.1.tar.bz2
-  execute "wget #{node[:magento][:download_folder]}/magento-#{node[:magento][:magento_version]}.tar.bz2" do
-    creates "/tmp/magento/magento-#{node[:magento][:magento_version]}.tar.bz2"
-    cwd "/tmp/magento"
-    action :run
-    group node[:magento][:unix_user]
-    user node[:magento][:unix_user]  
+  if node[:magento][:download_folder][0..3] == "http"
+    #http://www.magentocommerce.com/getmagento/1.5.0.1/magento-1.5.0.1.tar.bz2
+    execute "wget #{node[:magento][:download_folder]}/magento-#{node[:magento][:magento_version]}.tar.bz2" do
+      creates "/tmp/magento/magento-#{node[:magento][:magento_version]}.tar.bz2"
+      cwd "/tmp/magento"
+      action :run
+      group node[:magento][:unix_user]
+      user node[:magento][:unix_user]
+    end
+  else
+    execute "cp #{node[:magento][:download_folder]}/magento-#{node[:magento][:magento_version]}.tar.bz2 ." do
+      creates "/tmp/magento/magento-#{node[:magento][:magento_version]}.tar.bz2"
+      cwd "/tmp/magento"
+      action :run
+      group node[:magento][:unix_user]
+      user node[:magento][:unix_user]  
+    end
   end
   
   execute "tar -jxvf /tmp/magento/magento-#{node[:magento][:magento_version]}.tar.bz2" do
@@ -190,3 +205,16 @@ unless true #File.exists?("#{node[:magento][:dir]}/installed_sql_script.flag")
     end
   end
 end
+
+
+#Update url if necessary
+node[:magento][:full_url] = "#{node[:magento][:base_url]}/#{node[:magento][:dir_name]}/"
+
+unless node[:previous_magento_url] == node[:magento][:full_url]
+  execute "mysql -u #{node[:magento][:db][:username]} -p#{node[:magento][:db][:password]} -e \"use #{node[:magento][:db][:database]}; UPDATE core_config_data SET value = '#{node[:magento][:full_url]}' WHERE path = 'web/unsecure/base_url' or path = 'web/secure/base_url';\" -E" do
+  end
+  execute "rm -rf #{node[:magento][:dir]}/var/cache" do
+  end
+end
+
+

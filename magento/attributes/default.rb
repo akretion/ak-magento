@@ -13,8 +13,11 @@ default[:magento][:admin][:user]          = "admin"
 default[:magento][:admin][:password]      = "admin25"
 default[:magento][:unix_user]             = "magento"
 default[:magento][:base_url]              = "http://akretionvm"
+default[:magento][:full_url]              = "#{magento[:base_url]}/#{magento[:dir_name]}/"
+default[:magento][:previous_full_url]     = magento[:full_url]
 default[:magento][:download_folder]       = "http://s3.amazonaws.com/akretioncloud/magento_download"
-default[:magento][:connector_branch]      = "lp:magentoerpconnect/magento-module-trunk"
+default[:magento][:connector_branch]      = "lp:magentoerpconnect/magento-module-oerp6.x-stable"
+default[:magento][:demo_type]             = "demo-normal"
 
 default[:lamp][:mysql_root_password]      = "admin25"
 
