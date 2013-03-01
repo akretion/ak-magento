@@ -1,5 +1,13 @@
+execute "mysql -u #{node[:magento][:db][:username]} -p#{node[:magento][:db][:password]} -e'DROP DATABASE IF EXISTS #{node[:magento][:db][:database]}'" do
+  cwd "/tmp/magento"
+end  
 
-if node[:magento][:use_demo]
+execute "create #{node[:magento][:db][:database]} database" do
+  command "mysql -u #{node[:magento][:db][:username]} -p#{node[:magento][:db][:password]} -e'CREATE DATABASE #{node[:magento][:db][:database]}'"
+end
+
+
+if node[:magento][:demo_version]
   directory "/tmp/magento/#{node[:magento][:demo_version]}" do
      group node[:magento][:unix_user]
      owner node[:magento][:unix_user]
@@ -7,51 +15,23 @@ if node[:magento][:use_demo]
      recursive true
   end
 
-  if node[:magento][:demo_version] == 'defaults'
-    if node[:magento][:magento_version] >= "1.6.1.0"
-        node[:magento][:demo_version]="magento-sample-data-1.6.1.0"
-    else
-        node[:magento][:demo_version]="magento-sample-original"
-    end
+  remote_file "tmp/magento/demo_data.tar.bz2" do
+    source node[:magento][:demo_get_url][node[:magento][:demo_version]] 
+    mode "0644"
+    group node[:magento][:unix_user]
+    user node[:magento][:unix_user]  
   end
 
-  if node[:magento][:download_folder][0..3] == "http"
-    execute "wget #{node[:magento][:download_folder]}/#{node[:magento][:demo_type]}/#{node[:magento][:demo_version]}.tar.bz2" do
-      creates "/tmp/magento/#{node[:magento][:demo_version]}.tar.bz2"
-      cwd "/tmp/magento"
-      action :run
-      group node[:magento][:unix_user]
-      user node[:magento][:unix_user]  
-    end
-  else
-    execute "cp #{node[:magento][:download_folder]}/#{node[:magento][:demo_type]}/#{node[:magento][:demo_version]}.tar.bz2 ." do
-      creates "/tmp/magento/#{node[:magento][:demo_version]}.tar.bz2"
-      cwd "/tmp/magento"
-      action :run
-      group node[:magento][:unix_user]
-      user node[:magento][:unix_user]  
-    end
-  end
-
-  execute "tar -jxvf #{node[:magento][:demo_version]}.tar.bz2" do
-    creates "/tmp/magento/#{node[:magento][:demo_version]}"
+  execute "tar -jxvf demo_data.tar.bz2" do
     cwd "/tmp/magento"
     group node[:magento][:unix_user]
     user node[:magento][:unix_user]
   end
 
-  execute "mysql -u #{node[:magento][:db][:username]} -p#{node[:magento][:db][:password]} -e'DROP DATABASE IF EXISTS #{node[:magento][:db][:database]}'" do
-    cwd "/tmp/magento"
-  end  
-  
-  execute "create #{node[:magento][:db][:database]} database" do
-    command "mysql -u #{node[:magento][:db][:username]} -p#{node[:magento][:db][:password]} -e'CREATE DATABASE #{node[:magento][:db][:database]}'"
-  end
-
   execute "mysql -u #{node[:magento][:db][:username]} -p#{node[:magento][:db][:password]} #{node[:magento][:db][:database]} < #{node[:magento][:demo_version]}/#{node[:magento][:demo_version]}.sql" do
     cwd "/tmp/magento"
   end  
-  
+ 
   directory "#{node[:magento][:dir]}/media" do
      group node[:magento][:unix_user]
      owner node[:magento][:unix_user]
@@ -69,11 +49,13 @@ if node[:magento][:use_demo]
   end
 end
 
+
+
 bash "magento-install-site" do
   cwd node[:magento][:dir]
   code <<-EOH
   php -f install.php -- \
-  --license_agreement_accepted "yes" \
+  --license_agreement_accepted yes \
   --locale "fr_FR" \
   --timezone "Europe/Berlin" \
   --default_currency "EUR" \
@@ -81,12 +63,12 @@ bash "magento-install-site" do
   --db_name "#{node[:magento][:db][:database]}" \
   --db_user "#{node[:magento][:db][:username]}" \
   --db_pass "#{node[:magento][:db][:password]}" \
-  --url "#{node[:ec2] && node[:ec2][:public_hostname] || node[:magento][:base_url]}/#{node[:magento][:dir_name]}" \
+  --url "#{node[:magento][:url]}" \
   --skip_url_validation \
-  --use_rewrites "yes" \
-  --use_secure "no" \
+  --use_rewrites no \
+  --use_secure no \
   --secure_base_url "" \
-  --use_secure_admin "no" \
+  --use_secure_admin no \
   --admin_firstname "Admin" \
   --admin_lastname "Admin" \
   --admin_email "admin@admin.com" \
@@ -96,12 +78,14 @@ bash "magento-install-site" do
   EOH
 end
 
-directory "#{node[:magento][:dir]}/backup" do
-  group node[:magento][:unix_user]
-  owner node[:magento][:unix_user]
-  mode "0755"
-  action :create
-end
 
-execute "mysqldump -u #{node[:magento][:db][:username]} -p#{node[:magento][:db][:password]} #{node[:magento][:db][:database]} > #{node[:magento][:dir]}/backup/magento-#{node[:magento][:magento_version]}.sql" do
-end
+
+#directory "#{node[:magento][:dir]}/backup" do
+#  group node[:magento][:unix_user]
+#  owner node[:magento][:unix_user]
+#  mode "0755"
+#  action :create
+#end
+#
+#execute "mysqldump -u #{node[:magento][:db][:username]} -p#{node[:magento][:db][:password]} #{node[:magento][:db][:database]} > #{node[:magento][:dir]}/backup/magento-#{node[:magento][:magento_version]}.sql" do
+#end

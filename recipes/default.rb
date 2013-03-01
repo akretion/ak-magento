@@ -17,12 +17,14 @@
 # limitations under the License.
 #
 
-execute "apt-get update" do
-  command "apt-get update"
-  action :run
+#execute "apt-get update" do
+#  command "apt-get update"
+#  action :run
+#end
+
+if node[:magento][:port]
+    node[:magento][:url] = "http://localhost:#{node[:magento][:port]}"
 end
-
-
 
 group node[:magento][:unix_user] do
 end
@@ -35,48 +37,27 @@ user node[:magento][:unix_user] do
   shell "/bin/bash"
 end
 
-include_recipe "magento::lamp"
-include_recipe "magento::phpmyadmin"
-include_recipe "bzr::default"  
+include_recipe "ak-lnmp"
 
-apt_packages = %w[zip bzip2 php5-curl php5-cli php5-gd]
-apt_packages.each do |pack|
-  package pack do
-    action :install
-    options "--force-yes"
-  end
-end
-  
-execute "chown #{node[:magento][:unix_user]} /var/www" do
+#Configure NGINX
+template "/etc/nginx/sites-available/magento" do
+  owner "root"
+  group "root"
+  mode 00777
+  source "magento.erb"
+  variables :port => node[:magento][:port], :directory => node[:magento][:dir]
+  notifies :restart, "service[nginx]"
 end
 
-#configure apache
-unless `grep '#{node[:magento][:dir]}' /etc/apache2/apache2.conf`.size >0
-
-  execute "ln -s ../mods-available/rewrite.load" do
-    cwd "/etc/apache2/mods-enabled"
-    action :run
-    not_if "test -f /etc/apache2/mods-enabled/rewrite.load"
-  end
-  
-  script "configure apache" do
-    interpreter "ruby"
-    user "root"
-    group "root"
-    code <<-EOH
-    File.open("/etc/apache2/apache2.conf", 'a') do |file|
-      file.puts("<Directory #{node[:magento][:dir]}>\nAllowOverride All\n</Directory>")
-    end
-    EOH
-    not_if "grep '#{node[:magento][:dir]}' /etc/apache2/apache2.conf", :user => "root", :group => "root"
-  end
-  
-  execute "/etc/init.d/apache2 restart" do
-    action :run
-  end
+execute "enable magento website" do
+  command "ln -s ../sites-available/magento magento"
+  cwd "/etc/nginx/sites-enabled"
+  group "root"
+  user "root"
+  action :run
+  not_if {File.exist?("/etc/nginx/sites-enabled/magento")}
+  notifies :restart, "service[nginx]"
 end
-
-
 
 directory "/tmp/magento" do
   group node[:magento][:unix_user]
@@ -94,32 +75,20 @@ unless File.exists?("#{node[:magento][:dir]}/installed_code.flag")
      recursive true
   end
   
-  if node[:magento][:download_folder][0..3] == "http"
-    #http://www.magentocommerce.com/getmagento/1.5.0.1/magento-1.5.0.1.tar.bz2
-    execute "wget #{node[:magento][:download_folder]}/magento-#{node[:magento][:magento_version]}.tar.bz2" do
-      creates "/tmp/magento/magento-#{node[:magento][:magento_version]}.tar.bz2"
-      cwd "/tmp/magento"
-      action :run
-      group node[:magento][:unix_user]
-      user node[:magento][:unix_user]
-    end
-  else
-    execute "cp #{node[:magento][:download_folder]}/magento-#{node[:magento][:magento_version]}.tar.bz2 ." do
-      creates "/tmp/magento/magento-#{node[:magento][:magento_version]}.tar.bz2"
-      cwd "/tmp/magento"
-      action :run
-      group node[:magento][:unix_user]
-      user node[:magento][:unix_user]  
-    end
+
+  remote_file "/tmp/magento/magento_source.tar.bz2" do
+    source node[:magento][:magento_get_url][node[:magento][:magento_version]]
+    group node[:magento][:unix_user]
+    owner node[:magento][:unix_user]    
+    mode "0644"
   end
-  
-  execute "tar -jxvf /tmp/magento/magento-#{node[:magento][:magento_version]}.tar.bz2" do
+
+  execute "tar -jxvf /tmp/magento/magento_source.tar.bz2" do
     creates "/tmp/magento/magento"
     cwd "/tmp/magento"
     group node[:magento][:unix_user]
     user node[:magento][:unix_user]
   end
-
   
   execute "mv magento #{node[:magento][:dir]}" do
      creates "#{node[:magento][:dir]}"
@@ -138,30 +107,22 @@ end
 
 
 unless File.exists?("#{node[:magento][:dir]}/installed_code_connector.flag")
-  directory "/tmp/magento/magento-module" do
-     group node[:magento][:unix_user]
-     owner node[:magento][:unix_user]    
-     action :delete
-     recursive true
-  end
 
-  execute "su - #{node[:magento][:unix_user]} -c 'bzr branch --stacked #{node[:magento][:connector_branch]} /tmp/magento/magento-module; '" do
-    creates "/tmp/magento/magento-module"
-    cwd "/tmp/magento"
+  execute "su - #{node[:magento][:unix_user]} -c 'bzr branch --stacked #{node[:magento][:connector_branch]} magentoerpconnect; '" do
+    creates "/home/#{node[:magento][:unix_user]}/magentoerpconnect"
+    cwd "/home/#{node[:magento][:unix_user]}"
     user "root"
     action :run
   end
   
-  execute "mv magento-module/Openlabs_OpenERPConnector-1.1.0/app/etc/modules/Openlabs_OpenERPConnector.xml #{node[:magento][:dir]}/app/etc/modules/Openlabs_OpenERPConnector.xml" do
+  execute "ln -s /home/#{node[:magento][:unix_user]}/magentoerpconnect/Openlabs_OpenERPConnector-1.1.0/app/etc/modules/Openlabs_OpenERPConnector.xml #{node[:magento][:dir]}/app/etc/modules/Openlabs_OpenERPConnector.xml" do
      creates "#{node[:magento][:dir]}/app/etc/module/Openlabs_OpenERPConnector.xml"
-     cwd "/tmp/magento"
      group node[:magento][:unix_user]
      user node[:magento][:unix_user]  
   end
   
-  execute "mv magento-module/Openlabs_OpenERPConnector-1.1.0/Openlabs #{node[:magento][:dir]}/app/code/community" do
+  execute "ln -s /home/#{node[:magento][:unix_user]}/magentoerpconnect/Openlabs_OpenERPConnector-1.1.0/Openlabs #{node[:magento][:dir]}/app/code/community" do
      creates "#{node[:magento][:dir]}/app/code/community/Openlabs"
-     cwd "/tmp/magento"
      group node[:magento][:unix_user]
      user node[:magento][:unix_user]  
   end
@@ -170,51 +131,21 @@ unless File.exists?("#{node[:magento][:dir]}/installed_code_connector.flag")
   end
 end
 
-
 unless File.exists?("#{node[:magento][:dir]}/installed.flag")
-  
-  if node[:magento][:install_db_from_scratch]
-    include_recipe "magento::install_db"
-  else
-    include_recipe "magento::restor_db"
-  end  
+#  if node[:magento][:restor]
+#    include_recipe "ak-magento::restor_db"
+#  else
+    include_recipe "ak-magento::install_db"
+#  end  
 end
-
-
-#This code should create some magento data/configuration but creating data in magento with sql or with api is not easy at all
-unless true #File.exists?("#{node[:magento][:dir]}/installed_sql_script.flag")
-  if node[:magento][:init_sql_script]
-    node[:magento][:init_sql_script].each do |script|
-      
-      template "/tmp/magento/#{script}.sql" do
-        path "/tmp/magento/#{script}.sql"
-        source "#{srcipt}.sql.erb"
-        group node[:magento][:unix_user]
-        user node[:magento][:unix_user]  
-        variables()
-        notifies :run
-      end
-      
-      execute "#{script}" do
-        command "mysql -u #{node[:magento][:db][:username]} -p#{node[:magento][:db][:password]} #{node[:magento][:db][:database]} < /tmp/magento/#{script}"
-        action :nothing
-      end  
-    end
-    
-    execute "touch #{node[:magento][:dir]}/installed_sql_script.flag" do
-    end
-  end
-end
-
 
 #Update url if necessary
-node[:magento][:full_url] = "#{node[:magento][:base_url]}/#{node[:magento][:dir_name]}/"
 
-unless node[:previous_magento_url] == node[:magento][:full_url]
-  execute "mysql -u #{node[:magento][:db][:username]} -p#{node[:magento][:db][:password]} -e \"use #{node[:magento][:db][:database]}; UPDATE core_config_data SET value = '#{node[:magento][:full_url]}' WHERE path = 'web/unsecure/base_url' or path = 'web/secure/base_url';\" -E" do
-  end
-  execute "rm -rf #{node[:magento][:dir]}/var/cache" do
-  end
-end
+#unless node[:previous_url] == node[:magento][:url]
+#  execute "mysql -u #{node[:magento][:db][:username]} -p#{node[:magento][:db][:password]} -e \"use #{node[:magento][:db][:database]}; UPDATE core_config_data SET value = '#{node[:magento][:url]}' WHERE path = 'web/unsecure/base_url' or path = 'web/secure/base_url';\" -E" do
+#  end
+#  execute "rm -rf #{node[:magento][:dir]}/var/cache" do
+#  end
+#end
 
 
