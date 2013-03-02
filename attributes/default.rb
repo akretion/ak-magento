@@ -25,7 +25,7 @@ default[:magento][:admin][:password]      = "admin25"
 default[:magento][:port]                  = 8100
 default[:magento][:url]                   = false
 default[:magento][:previous_url]          = magento[:url]
-default[:magento][:connector_branch]      = "http://bazaar.launchpad.net/branch/magentoerpconnect/magento-module-oerp6.x-stable"
+default[:magento][:connector_branch]      = "http://bazaar.launchpad.net/~magentoerpconnect-core-editors/magentoerpconnect/module-magento-trunk/"
 
 #mysql configuration
 default[:mysql][:db][:database]           = "magento"
