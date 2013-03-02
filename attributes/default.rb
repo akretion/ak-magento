@@ -2,8 +2,6 @@
 default[:ak_tools][:apt_packages] += %w[
 zip
 bzip2
-php5-curl
-php5-gd
 bzr
 ] 
 

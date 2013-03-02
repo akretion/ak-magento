@@ -17,21 +17,7 @@
 # limitations under the License.
 #
 
-#execute "apt-get update" do
-#  command "apt-get update"
-#  action :run
-#end
-
 include_recipe "ak-lnmp"
-
-apt_packages = %w[zip bzip2 php5-curl php5-gd bzr]
-
-apt_packages.each do |ap|
-  package "#{ap}" do
-      options "--force-yes"
-  end
-end
-
 
 
 if node[:magento][:port]
