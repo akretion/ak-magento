@@ -1,5 +1,7 @@
+
+#Create a neww database (delete existing if exist)
+#TODO use database provider https://github.com/opscode-cookbooks/database
 execute "mysql -u #{node[:mysql][:db][:username]} -p#{node[:mysql][:db][:password]} -e'DROP DATABASE IF EXISTS #{node[:mysql][:db][:database]}'" do
-  cwd "/tmp/magento"
 end  
 
 execute "create #{node[:mysql][:db][:database]} database" do
@@ -7,50 +9,30 @@ execute "create #{node[:mysql][:db][:database]} database" do
 end
 
 
+#Install demo data if necessary
 if node[:magento][:demo_version]
-  directory "/tmp/magento/#{node[:magento][:demo_version]}" do
-     group node[:webserver][:unix_user]
-     owner node[:webserver][:unix_user]
-     action :delete
-     recursive true
-  end
-
-  remote_file "tmp/magento/demo_data.tar.bz2" do
+  remote_file "#{Chef::Config[:file_cache_path]}/demo_data.tar.bz2" do
     source node[:magento][:demo_get_url][node[:magento][:demo_version]] 
     mode "0644"
     group node[:webserver][:unix_user]
     user node[:webserver][:unix_user]  
   end
 
-  execute "tar -jxvf demo_data.tar.bz2" do
-    cwd "/tmp/magento"
-    group node[:webserver][:unix_user]
-    user node[:webserver][:unix_user]
-  end
-
-  execute "mysql -u #{node[:magento][:db][:username]} -p#{node[:magento][:db][:password]} #{node[:magento][:db][:database]} < #{node[:magento][:demo_version]}/#{node[:magento][:demo_version]}.sql" do
-    cwd "/tmp/magento"
-  end  
- 
-  directory "#{node[:magento][:dir]}/media" do
-     group node[:webserver][:unix_user]
-     owner node[:webserver][:unix_user]
-     action :delete
-     recursive true
-  end
-
-  execute "mv #{node[:magento][:demo_version]}/media #{node[:magento][:dir]}/media" do
-     cwd "/tmp/magento"
-     group node[:webserver][:unix_user]
-     user node[:webserver][:unix_user]  
-  end
-
-  execute "chmod -R 777 #{node[:magento][:dir]}/media" do
+  bash "load magento sample data" do
+    cwd Chef::Config[:file_cache_path]
+    code <<-EOH
+    tar -jxvf #{Chef::Config[:file_cache_path]}/demo_data.tar.bz2    
+    mysql -u #{node[:mysql][:db][:username]}\
+          -p#{node[:mysql][:db][:password]}\
+          #{node[:mysql][:db][:database]}\
+          < magento-sample-data-*/magento_sample_data*.sql
+    mv magento-sample-data-*/media/* #{node[:magento][:dir]}/media
+    chmod -R 777 #{node[:magento][:dir]}/media
+    EOH
   end
 end
 
-
-
+#Launch magento installer
 bash "magento-install-site" do
   cwd node[:magento][:dir]
   code <<-EOH
@@ -78,14 +60,4 @@ bash "magento-install-site" do
   EOH
 end
 
-
-
-#directory "#{node[:magento][:dir]}/backup" do
-#  group node[:magento][:unix_user]
-#  owner node[:magento][:unix_user]
-#  mode "0755"
-#  action :create
-#end
-#
-#execute "mysqldump -u #{node[:magento][:db][:username]} -p#{node[:magento][:db][:password]} #{node[:magento][:db][:database]} > #{node[:magento][:dir]}/backup/magento-#{node[:magento][:magento_version]}.sql" do
-#end
+node[:previous_url] == node[:magento][:url]

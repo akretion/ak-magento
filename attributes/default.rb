@@ -11,7 +11,7 @@ default[:magento][:magento_version]       = "1.7.0.2"
 default[:magento][:magento_get_url]     = {
     "1.7.0.2" => "http://www.magentocommerce.com/downloads/assets/1.7.0.2/magento-1.7.0.2.tar.bz2",
 }
-default[:magento][:demo_version]          = false #"1.6.1.0" # set to False if you don't want to install demo data
+default[:magento][:demo_version]          = "1.6.1.0" # set to False if you don't want to install demo data
 default[:magento][:demo_get_url] = {
     "1.6.1.0"=> "http://www.magentocommerce.com/downloads/assets/1.6.1.0/magento-sample-data-1.6.1.0.tar.bz2",
 }
@@ -23,8 +23,9 @@ default[:magento][:dir]                   = magento[:dir_www] + '/'+ magento[:di
 default[:magento][:admin][:user]          = "admin"
 default[:magento][:admin][:password]      = "admin25"
 default[:magento][:port]                  = 8100
+default[:magento][:force_url]             = false    
 default[:magento][:url]                   = false
-default[:magento][:previous_url]          = magento[:url]
+default[:magento][:previous_url]          = false
 default[:magento][:connector_branch]      = "http://bazaar.launchpad.net/~magentoerpconnect-core-editors/magentoerpconnect/module-magento-trunk/"
 
 #mysql configuration

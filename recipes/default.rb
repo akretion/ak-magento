@@ -19,8 +19,9 @@
 
 include_recipe "ak-lnmp"
 
-
-if node[:magento][:port]
+if node[:magento][:force_url]
+    node[:magento][:url] = node[:magento][:force_url]
+else
     node[:magento][:url] = "http://localhost:#{node[:magento][:port]}"
 end
 
@@ -44,40 +45,19 @@ execute "enable magento website" do
   notifies :restart, "service[nginx]"
 end
 
-directory "/tmp/magento" do
-  group node[:webserver][:unix_user]
-  owner node[:webserver][:unix_user]
-  mode "0755"
-  action :create
-end
-  
+#Install Magento code source
 unless File.exists?("#{node[:magento][:dir]}/installed_code.flag")
-  
-  directory "/tmp/magento/magento" do
-     group node[:webserver][:unix_user]
-     owner node[:webserver][:unix_user]    
-     action :delete
-     recursive true
-  end
-  
 
-  remote_file "/tmp/magento/magento_source.tar.bz2" do
+  remote_file "#{Chef::Config[:file_cache_path]}/magento_source.tar.bz2" do
     source node[:magento][:magento_get_url][node[:magento][:magento_version]]
     group node[:webserver][:unix_user]
     owner node[:webserver][:unix_user]    
     mode "0644"
   end
 
-  execute "tar -jxvf /tmp/magento/magento_source.tar.bz2" do
-    creates "/tmp/magento/magento"
-    cwd "/tmp/magento"
-    group node[:webserver][:unix_user]
-    user node[:webserver][:unix_user]
-  end
-  
-  execute "mv magento #{node[:magento][:dir]}" do
-     creates "#{node[:magento][:dir]}"
-     cwd "/tmp/magento"
+  execute "tar -jxvf #{Chef::Config[:file_cache_path]}/magento_source.tar.bz2" do
+     creates node[:magento][:dir]
+     cwd node[:magento][:dir_www]
      group node[:webserver][:unix_user]
      user node[:webserver][:unix_user]  
   end 
@@ -90,7 +70,7 @@ unless File.exists?("#{node[:magento][:dir]}/installed_code.flag")
   end
 end
 
-
+#install MagentoERPconnect extention
 unless File.exists?("#{node[:magento][:dir]}/installed_code_connector.flag")
 
   execute "su - #{node[:webserver][:unix_user]} -c 'bzr branch --stacked #{node[:magento][:connector_branch]} magentoerpconnect; '" do
