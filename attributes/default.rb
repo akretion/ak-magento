@@ -33,5 +33,5 @@ default[:mysql][:db][:database]           = "magento"
 
 
 #
-default[:magento][:restor]                = false #restor an existing db instead of creating a new one
+default[:magento][:restore]                = false #restor an existing db instead of creating a new one
 

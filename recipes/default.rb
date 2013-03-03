@@ -45,72 +45,33 @@ execute "enable magento website" do
   notifies :restart, "service[nginx]"
 end
 
-#Install Magento code source
-unless File.exists?("#{node[:magento][:dir]}/installed_code.flag")
-
-  remote_file "#{Chef::Config[:file_cache_path]}/magento_source.tar.bz2" do
-    source node[:magento][:magento_get_url][node[:magento][:magento_version]]
-    group node[:webserver][:unix_user]
-    owner node[:webserver][:unix_user]    
-    mode "0644"
-  end
-
-  execute "tar -jxvf #{Chef::Config[:file_cache_path]}/magento_source.tar.bz2" do
-     creates node[:magento][:dir]
-     cwd node[:magento][:dir_www]
-     group node[:webserver][:unix_user]
-     user node[:webserver][:unix_user]  
-  end 
-
-  execute "chmod -R 777 #{node[:magento][:dir]}" do
-    action :run
-  end
-
-  execute "touch #{node[:magento][:dir]}/installed_code.flag" do
-  end
-end
-
-#install MagentoERPconnect extention
-unless File.exists?("#{node[:magento][:dir]}/installed_code_connector.flag")
-
-  execute "su - #{node[:webserver][:unix_user]} -c 'bzr branch --stacked #{node[:magento][:connector_branch]} magentoerpconnect; '" do
-    creates "/home/#{node[:webserver][:unix_user]}/magentoerpconnect"
-    cwd "/home/#{node[:webserver][:unix_user]}"
-    user "root"
-    action :run
-  end
-  
-  execute "ln -s /home/#{node[:magento][:unix_user]}/magentoerpconnect/Openlabs_OpenERPConnector-1.1.0/app/etc/modules/Openlabs_OpenERPConnector.xml #{node[:magento][:dir]}/app/etc/modules/Openlabs_OpenERPConnector.xml" do
-     creates "#{node[:magento][:dir]}/app/etc/module/Openlabs_OpenERPConnector.xml"
-     group node[:webserver][:unix_user]
-     user node[:webserver][:unix_user]  
-  end
-  
-  execute "ln -s /home/#{node[:magento][:unix_user]}/magentoerpconnect/Openlabs_OpenERPConnector-1.1.0/Openlabs #{node[:magento][:dir]}/app/code/community" do
-     creates "#{node[:magento][:dir]}/app/code/community/Openlabs"
-     group node[:webserver][:unix_user]
-     user node[:webserver][:unix_user]  
-  end
-  
-  execute "touch #{node[:magento][:dir]}/installed_code_connector.flag" do
-  end
-end
-
 unless File.exists?("#{node[:magento][:dir]}/installed.flag")
-#  if node[:magento][:restor]
-#    include_recipe "ak-magento::restor_db"
-#  else
-    include_recipe "ak-magento::install_db"
-#  end  
+  if node[:magento][:restore]
+    include_recipe "ak-magento::restore_env"
+  else
+   include_recipe "ak-magento::install_magento"
+  end  
 end
 
 #Update url if necessary
 
-#unless node[:previous_url] == node[:magento][:url]
-#  execute "mysql -u #{node[:magento][:db][:username]} -p#{node[:magento][:db][:password]} -e \"use #{node[:magento][:db][:database]}; UPDATE core_config_data SET value = '#{node[:magento][:url]}' WHERE path = 'web/unsecure/base_url' or path = 'web/secure/base_url';\" -E" do
-#  end
-#  execute "rm -rf #{node[:magento][:dir]}/var/cache" do
-#  end
-#end
+unless node[:magento][:previous_url] == node[:magento][:url]
+  execute "mysql -u #{node[:mysql][:db][:username]} -p#{node[:mysql][:db][:password]} -e \"use #{node[:mysql][:db][:database]}; UPDATE core_config_data SET value = '#{node[:magento][:url]}' WHERE path = 'web/unsecure/base_url' or path = 'web/secure/base_url';\" -E" do
+  end
+  execute "rm -rf #{node[:magento][:dir]}/var/cache" do
+  end
+end
 
+
+{'username' => node[:mysql][:db][:username],
+'password' => node[:mysql][:db][:password],
+'dbname' => node[:mysql][:db][:database],
+'host' => 'localhost'}.each do |key, value|
+  execute "update value for #{key}" do
+    cwd node[:magento][:dir]
+    command "sed -i 's/<#{key}><!\\[CDATA\\[.*\\]\\]><\\/#{key}>/<#{key}><![CDATA[#{value}]]><\\/#{key}>/g' app/etc/local.xml"
+    group node[:webserver][:unix_user]
+    user node[:webserver][:unix_user]  
+  end
+end
 

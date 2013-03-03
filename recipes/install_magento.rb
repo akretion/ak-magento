@@ -1,4 +1,31 @@
 
+#Install Magento code source
+unless File.exists?("#{node[:magento][:dir]}/installed_code.flag")
+
+  remote_file "#{Chef::Config[:file_cache_path]}/magento_source.tar.bz2" do
+    source node[:magento][:magento_get_url][node[:magento][:magento_version]]
+    group node[:webserver][:unix_user]
+    owner node[:webserver][:unix_user]    
+    mode "0644"
+  end
+
+  execute "tar -jxvf #{Chef::Config[:file_cache_path]}/magento_source.tar.bz2" do
+     creates node[:magento][:dir]
+     cwd node[:magento][:dir_www]
+     group node[:webserver][:unix_user]
+     user node[:webserver][:unix_user]  
+  end 
+
+  execute "chmod -R 777 #{node[:magento][:dir]}" do
+    action :run
+  end
+
+  execute "touch #{node[:magento][:dir]}/installed_code.flag" do
+  end
+end
+
+include_recipe "ak-magento::install_magentoerpconnect"
+
 #Create a neww database (delete existing if exist)
 #TODO use database provider https://github.com/opscode-cookbooks/database
 execute "mysql -u #{node[:mysql][:db][:username]} -p#{node[:mysql][:db][:password]} -e'DROP DATABASE IF EXISTS #{node[:mysql][:db][:database]}'" do
