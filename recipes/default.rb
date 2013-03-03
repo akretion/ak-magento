@@ -63,15 +63,4 @@ unless node[:magento][:previous_url] == node[:magento][:url]
 end
 
 
-{'username' => node[:mysql][:db][:username],
-'password' => node[:mysql][:db][:password],
-'dbname' => node[:mysql][:db][:database],
-'host' => 'localhost'}.each do |key, value|
-  execute "update value for #{key}" do
-    cwd node[:magento][:dir]
-    command "sed -i 's/<#{key}><!\\[CDATA\\[.*\\]\\]><\\/#{key}>/<#{key}><![CDATA[#{value}]]><\\/#{key}>/g' app/etc/local.xml"
-    group node[:webserver][:unix_user]
-    user node[:webserver][:unix_user]  
-  end
-end
 
