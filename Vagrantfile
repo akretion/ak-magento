@@ -11,6 +11,8 @@ Vagrant::Config.run do |config|
   config.vm.forward_port MagentoPort, MagentoPort
   config.vm.forward_port PhpMyAdminPort, PhpMyAdminPort
 
+  config.vm.provision :shell, :path => "install_chef.sh" 
+
   config.vm.provision :chef_solo do |chef|
       chef.provisioning_path = "/etc/chef-solo"
       chef.add_recipe("ak-magento")
