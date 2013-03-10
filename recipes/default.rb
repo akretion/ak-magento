@@ -20,9 +20,9 @@
 include_recipe "ak-lnmp"
 
 if node[:magento][:force_url]
-    node[:magento][:url] = node[:magento][:force_url]
+    node.default[:magento][:url] = node[:magento][:force_url]
 else
-    node[:magento][:url] = "http://localhost:#{node[:magento][:port]}"
+    node.default[:magento][:url] = "http://localhost:#{node[:magento][:port]}"
 end
 
 #Configure NGINX
