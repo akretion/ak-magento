@@ -20,7 +20,8 @@ Vagrant::Config.run do |config|
         :magento => {
             :port => MagentoPort,
             :magento_version => "1.7.0.2",
-            },
+#            :demo_version => false,
+        },
         :phpmyadmin => {:port => PhpMyAdminPort},
     }
   end

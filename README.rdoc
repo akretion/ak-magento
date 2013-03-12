@@ -4,8 +4,31 @@ You should not use this recipe for production is just a basic recipe for testing
 
 If you want to use chrome or safari you need to apply this path http://www.magentocommerce.com/wiki/how_to_fix_login_for_admin_on_local_install (sorry magento is a bugged software :p)
 
+HOW to use it
+---------------
+first install needed gem with
+
+bundle install
+
+then go in the ak-magento directory and launch vagrant
+
+vagrant up
+
+Let's use it:
+magento run at http://localhost:9100
+login : admin
+pwd: admin25
+
+phpmyadmin run at http://localhost:9200
+login : root
+pwd : admin25
 
 = REQUIREMENTS:
+- having virtualbox installed
+
+- having bundler installed
+gem install bundler
+
 
 = ATTRIBUTES:
 
