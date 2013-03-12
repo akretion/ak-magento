@@ -54,13 +54,13 @@ unless File.exists?("#{node[:magento][:dir]}/installed.flag")
 end
 
 #Update url if necessary
-
-unless node[:magento][:previous_url] == node[:magento][:url]
-  execute "mysql -u #{node[:mysql][:db][:username]} -p#{node[:mysql][:db][:password]} -e \"use #{node[:mysql][:db][:database]}; UPDATE core_config_data SET value = '#{node[:magento][:url]}' WHERE path = 'web/unsecure/base_url' or path = 'web/secure/base_url';\" -E" do
-  end
-  execute "rm -rf #{node[:magento][:dir]}/var/cache" do
-  end
-end
-
+#
+#unless node[:magento][:previous_url] == node[:magento][:url]
+#  execute "mysql -u #{node[:mysql][:db][:username]} -p#{node[:mysql][:db][:password]} -e \"use #{node[:mysql][:db][:database]}; UPDATE core_config_data SET value = '#{node[:magento][:url]}' WHERE path = 'web/unsecure/base_url' or path = 'web/secure/base_url';\" -E" do
+#  end
+#  execute "rm -rf #{node[:magento][:dir]}/var/cache" do
+#  end
+#end
+#
 
 
