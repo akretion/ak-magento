@@ -1,36 +1,54 @@
-= DESCRIPTION:
-This is a recipe for installing easily and testing magento and magentoerpconnect
-You should not use this recipe for production is just a basic recipe for testing.
+=DESCRIPTION:
 
-If you want to use chrome or safari you need to apply this path http://www.magentocommerce.com/wiki/how_to_fix_login_for_admin_on_local_install (sorry magento is a bugged software :p)
+This is a recipe for installing easily and testing magento and magentoerpconnect.
 
-HOW to use it
----------------
-first install needed gem with
+You should not use this recipe for production, it is just a basic recipe for testing.
 
-bundle install
+If you want to use Magento on chrome or safari, you need to apply this patch
+http://www.magentocommerce.com/wiki/how_to_fix_login_for_admin_on_local_install 
+(sorry magento is a bugged software :p)
 
-then go in the ak-magento directory and launch vagrant
-
-vagrant up
-
-Let's use it:
-magento run at http://localhost:9100
-login : admin
-pwd: admin25
-
-phpmyadmin run at http://localhost:9200
-login : root
-pwd : admin25
 
 = REQUIREMENTS:
-- having virtualbox installed
 
-- having bundler installed
-gem install bundler
+- git
 
+- virtualbox
 
-= ATTRIBUTES:
+- ruby 1.9.3
+
+- bundler (ruby gem)
+
+= INSTALLATION:
+
+Get the vagrant recipe with the following command:
+
+    git clone https://github.com/akretion/ak-magento.git
+
+If you do not have bundler, install it with:
+
+    gem install bundler
+
+Install the required gems with:
+
+    bundle install
+
+Then go in the ak-magento directory and launch vagrant:
+
+    vagrant up
 
 = USAGE:
 
+Magento runs on http://localhost:9100
+
+    login: admin
+    password: admin25
+
+PHPMyAdmin runs on http://localhost:9200
+
+    login: root
+    password: admin25
+
+If you want to use it with Magentoerpconnect (https://code.launchpad.net/magentoerpconnect), 
+do not forget to create a web-service user
+(http://www.magentocommerce.com/wiki/modules_reference/english/mage_adminhtml/api_user/index).
