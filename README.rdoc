@@ -13,7 +13,7 @@ http://www.magentocommerce.com/wiki/how_to_fix_login_for_admin_on_local_install
 
 - git
 
-- virtualbox
+- vagrant >= 1.1.0
 
 - ruby 1.9.3
 
@@ -32,6 +32,10 @@ If you do not have bundler, install it with:
 Install the required gems with:
 
     bundle install
+
+Install berkshelf plugin for vagrant:
+
+    vagrant plugin install berkshelf-vagrant
 
 Then go in the ak-magento directory and launch vagrant:
 
