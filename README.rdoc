@@ -15,25 +15,20 @@ http://www.magentocommerce.com/wiki/how_to_fix_login_for_admin_on_local_install
 
 - vagrant >= 1.1.0
 
+- vagrant
+
 - ruby 1.9.3
 
-- bundler (ruby gem)
 
 = INSTALLATION:
 
 Get the vagrant recipe with the following command:
 
     git clone https://github.com/akretion/ak-magento.git
+    
+Install ``vagrant`` from the package manager of your distribution or from http://downloads.vagrantup.com/
 
-If you do not have bundler, install it with:
-
-    gem install bundler
-
-Install the required gems with:
-
-    bundle install
-
-Install berkshelf plugin for vagrant:
+Install ``berkshelf`` in vagrant using:
 
     vagrant plugin install berkshelf-vagrant
 
