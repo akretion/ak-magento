@@ -28,6 +28,8 @@ Then go in the ak-magento directory and launch vagrant:
 
     vagrant up
 
+Note: this recipe is compatible with lxc and virtualbox provider. If you do not know the lxc provider then take a look here : https://github.com/fgrehm/vagrant-lxc
+
 = USAGE:
 
 Magento runs on http://localhost:9100

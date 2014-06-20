@@ -2,13 +2,21 @@
 # vi: set ft=ruby :
 MagentoPort = 9100
 PhpMyAdminPort = 9200
+VAGRANTFILE_API_VERSION = "2"
 
-Vagrant::Config.run do |config|
-  config.vm.box = "precise32"
-  config.vm.box_url = "http://files.vagrantup.com/precise32.box"
+Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
+  config.vm.provider :lxc do |v, override|
+    v.backingstore = 'none'
+    override.vm.box = "fgrehm/precise64-lxc"
+  end
 
-  config.vm.forward_port MagentoPort, MagentoPort
-  config.vm.forward_port PhpMyAdminPort, PhpMyAdminPort
+  config.vm.provider :virtualbox do |v, override|
+    override.vm.box = "precise32"
+    override.vm.box_url = "http://files.vagrantup.com/precise32.box"
+  end
+
+  config.vm.network "forwarded_port", guest: MagentoPort, host: MagentoPort
+  config.vm.network "forwarded_port", guest: PhpMyAdminPort, host: PhpMyAdminPort
 
   config.vm.provision :shell, :path => "install_chef.sh" 
 
