@@ -1,6 +1,10 @@
 #!/bin/bash
 
-command="wget -O - https://www.opscode.com/chef/install.sh | sudo bash"
+#command="wget -O - https://www.opscode.com/chef/install.sh | sudo bash"
+# we do not take the last version of chef but the one that works for this
+# project: https://www.chef.io/download-chef-client/
+command="sudo dpkg -i /vagrant/packages/chef_11.0.0-1.ubuntu.11.04_i386.deb"
+
 
 repo_list=(
     http://github.com/akretion/ak-magento.git
